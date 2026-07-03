@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Расписание преподавателей</title>
+    <style>
+        /* ===== Глобальные стили ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f4f6f9;
+            color: #1a1a2e;
+            padding: 20px;
+        }
+
+        .app-container {
+            max-width: 1440px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            padding: 24px 32px 32px 32px;
+        }
+
+        /* ===== Ролевой переключатель (демо) ===== */
+        .role-switcher {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+
+        .role-switcher button {
+            padding: 8px 20px;
+            border-radius: 30px;
+            border: 1px solid #d0d7de;
+            background: #fff;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .role-switcher button.active {
+            background: #1a1a2e;
+            color: #fff;
+            border-color: #1a1a2e;
+        }
+
+        .role-switcher button:hover:not(.active) {
+            background: #f0f2f5;
+        }
+
+        .role-badge {
+            font-size: 13px;
+            background: #eef2ff;
+            color: #4f46e5;
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-weight: 500;
+            display: inline-block;
+            margin-left: 12px;
+        }
+
+        /* ===== Шапка ===== */
+        .header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            gap: 12px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-left h1 {
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+        }
+
+        .header-left .sub {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        /* Навигация по неделям */
+        .week-nav {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f3f4f6;
+            padding: 4px 8px;
+            border-radius: 40px;
+        }
+
+        .week-nav button {
+            background: transparent;
+            border: none;
+            font-size: 18px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s;
+        }
+
+        .week-nav button:hover {
+            background: #e5e7eb;
+        }
+
+        .week-nav .week-range {
+            font-size: 14px;
+            font-weight: 500;
+            padding: 0 10px;
+            min-width: 160px;
+            text-align: center;
+        }
+
+        .week-nav .today-btn {
+            font-size: 13px;
+            font-weight: 500;
+            padding: 4px 14px;
+            border-radius: 30px;
+            background: #fff;
+            border: 1px solid #d0d7de;
+            cursor: pointer;
+        }
+
+        .week-nav .today-btn:hover {
+            background: #f0f2f5;
+        }
+
+        /* Выбор преподавателя */
+        .teacher-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .teacher-selector select {
+            padding: 8px 16px 8px 14px;
+            border-radius: 30px;
+            border: 1px solid #d0d7de;
+            background: #fff;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            min-width: 180px;
+            outline: none;
+        }
+
+        .teacher-selector select:focus {
+            border-color: #1a1a2e;
+        }
+
+        .teacher-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            background: #f3f4f6;
+            padding: 4px 14px 4px 12px;
+            border-radius: 30px;
+            cursor: default;
+        }
+
+        .teacher-badge .count {
+            background: #1a1a2e;
+            color: #fff;
+            border-radius: 30px;
+            padding: 0 10px;
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 22px;
+        }
+
+        .teacher-badge .edit-icon {
+            color: #6b7280;
+            margin-left: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .teacher-badge .edit-icon:hover {
+            color: #1a1a2e;
+        }
+
+        /* Кнопка подработки */
+        .btn-substitution {
+            background: #f97316;
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.15s;
+            white-space: nowrap;
+        }
+
+        .btn-substitution:hover {
+            background: #ea580c;
+        }
+
+        /* ===== Сетка календаря ===== */
+        .calendar-wrapper {
+            position: relative;
+            overflow-x: auto;
+            margin-top: 8px;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            background: #fff;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: 60px repeat(7, 1fr);
+            min-width: 800px;
+        }
+
+        /* Заголовки дней */
+        .day-header {
+            padding: 12px 8px 10px 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 14px;
+            border-bottom: 1px solid #e5e7eb;
+            border-right: 1px solid #e5e7eb;
+            background: #fafbfc;
+        }
+
+        .day-header.today {
+            background: #eef2ff;
+            color: #4f46e5;
+            border-radius: 0;
+        }
+
+        .day-header .day-name {
+            font-size: 13px;
+            font-weight: 400;
+            color: #6b7280;
+        }
+
+        .day-header .day-number {
+            font-size: 20px;
+            font-weight: 700;
+            display: block;
+            margin-top: 2px;
+        }
+
+        .time-label {
+            padding: 8px 6px;
+            text-align: right;
+            font-size: 12px;
+            color: #6b7280;
+            border-bottom: 1px solid #f0f2f5;
+            border-right: 1px solid #e5e7eb;
+            background: #fafbfc;
+            font-weight: 500;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 12px;
+        }
+
+        /* Ячейки */
+        .cell {
+            border-bottom: 1px solid #f0f2f5;
+            border-right: 1px solid #e5e7eb;
+            height: 60px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.1s;
+            background: #fff;
+        }
+
+        .cell:hover {
+            background: #f8faff;
+        }
+
+        .cell.today-col {
+            background: #fafbff;
+        }
+
+        /* Карточки событий */
+        .event-card {
+            position: absolute;
+            left: 4px;
+            right: 4px;
+            border-radius: 8px;
+            padding: 4px 8px;
+            font-size: 11px;
+            line-height: 1.4;
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+            border-left: 3px solid rgba(0, 0, 0, 0.1);
+            transition: transform 0.1s, box-shadow 0.1s;
+            z-index: 2;
+            min-height: 24px;
+        }
+
+        .event-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+            z-index: 10;
+        }
+
+        .event-card .time {
+            font-weight: 600;
+            font-size: 10px;
+            opacity: 0.8;
+            display: block;
+        }
+
+        .event-card .title {
+            font-weight: 500;
+            font-size: 11px;
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .event-card .sub {
+            font-size: 10px;
+            opacity: 0.7;
+            display: block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .event-card .badge {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 1px 8px;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.3);
+            margin-top: 2px;
+        }
+
+        /* Цвета карточек */
+        .card-system {
+            background: #3b82f6;
+            color: #fff;
+            border-left-color: #1d4ed8;
+        }
+
+        .card-permanent {
+            background: #22c55e;
+            color: #fff;
+            border-left-color: #16a34a;
+        }
+
+        .card-temporary {
+            background: #60a5fa;
+            color: #fff;
+            border-left-color: #2563eb;
+        }
+
+        .card-substitution {
+            background: #f97316;
+            color: #fff;
+            border-left-color: #ea580c;
+        }
+
+        /* ===== Модальные окна ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.35);
+            backdrop-filter: blur(3px);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: #fff;
+            border-radius: 24px;
+            max-width: 520px;
+            width: 100%;
+            padding: 32px 36px;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
+            animation: modalFade 0.2s ease;
+        }
+
+        @keyframes modalFade {
+            from {
+                opacity: 0;
+                transform: scale(0.96) translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal h2 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .modal .subtitle {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 24px;
+        }
+
+        .modal .field {
+            margin-bottom: 18px;
+        }
+
+        .modal .field label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #374151;
+        }
+
+        .modal .field input,
+        .modal .field select {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid #d0d7de;
+            font-size: 14px;
+            outline: none;
+            transition: border 0.15s;
+            background: #fafbfc;
+        }
+
+        .modal .field input:focus,
+        .modal .field select:focus {
+            border-color: #1a1a2e;
+            background: #fff;
+        }
+
+        .modal .field .hint {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .modal .toggle-group {
+            display: flex;
+            gap: 12px;
+            background: #f3f4f6;
+            padding: 4px;
+            border-radius: 40px;
+            margin-bottom: 16px;
+        }
+
+        .modal .toggle-group button {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 30px;
+            background: transparent;
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .modal .toggle-group button.active {
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .modal .actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+
+        .modal .actions button {
+            padding: 10px 28px;
+            border-radius: 40px;
+            border: none;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .modal .actions .btn-primary {
+            background: #1a1a2e;
+            color: #fff;
+        }
+
+        .modal .actions .btn-primary:hover {
+            background: #2d2d44;
+        }
+
+        .modal .actions .btn-secondary {
+            background: #f3f4f6;
+            color: #1a1a2e;
+        }
+
+        .modal .actions .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        /* ===== Список подработок ===== */
+        .substitution-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .substitution-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid #f0f2f5;
+        }
+
+        .substitution-item:last-child {
+            border-bottom: none;
+        }
+
+        .substitution-item .info .date {
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .substitution-item .info .details {
+            font-size: 13px;
+            color: #4b5563;
+            margin-top: 2px;
+        }
+
+        .substitution-item .info .subject-tag {
+            display: inline-block;
+            background: #eef2ff;
+            color: #4f46e5;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 2px 12px;
+            border-radius: 30px;
+            margin-top: 4px;
+        }
+
+        .substitution-item .btn-take {
+            padding: 6px 20px;
+            border-radius: 30px;
+            border: none;
+            background: #22c55e;
+            color: #fff;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.15s;
+            white-space: nowrap;
+        }
+
+        .substitution-item .btn-take:hover {
+            background: #16a34a;
+        }
+
+        .substitution-item .btn-take:disabled {
+            background: #d1d5db;
+            cursor: default;
+        }
+
+        /* ===== Список предметов в модалке ===== */
+        .subject-list-modal .subject-tag {
+            display: inline-block;
+            background: #f3f4f6;
+            padding: 4px 14px;
+            border-radius: 30px;
+            font-size: 13px;
+            margin: 4px 6px 4px 0;
+        }
+
+        .subject-list-modal .subject-tag.admin {
+            background: #eef2ff;
+            color: #4f46e5;
+            cursor: pointer;
+            border: 1px dashed #4f46e5;
+        }
+
+        .subject-list-modal .subject-tag.admin:hover {
+            background: #dbeafe;
+        }
+
+        /* ===== Отзывчивость ===== */
+        @media (max-width: 1024px) {
+            .app-container {
+                padding: 16px;
+            }
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .header-right {
+                flex-wrap: wrap;
+            }
+            .role-switcher {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .calendar-grid {
+                grid-template-columns: 40px repeat(7, 1fr);
+                min-width: 600px;
+            }
+            .time-label {
+                font-size: 10px;
+                height: 48px;
+                padding-right: 6px;
+            }
+            .cell {
+                height: 48px;
+            }
+            .event-card {
+                font-size: 9px;
+                padding: 2px 4px;
+            }
+            .event-card .title {
+                font-size: 9px;
+            }
+            .modal {
+                padding: 20px;
+            }
+            .btn-substitution {
+                font-size: 12px;
+                padding: 6px 14px;
+            }
+        }
+
+        /* Пустое состояние */
+        .empty-state {
+            padding: 40px 20px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 15px;
+        }
+
+        /* Индикатор роли */
+        .role-indicator {
+            font-size: 13px;
+            background: #eef2ff;
+            color: #4f46e5;
+            padding: 4px 16px;
+            border-radius: 30px;
+            font-weight: 600;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Ролевой переключатель (демо) -->
+        <div class="role-switcher">
+            <button class="active" data-role="teacher" onclick="switchRole('teacher')">👨‍🏫 Преподаватель</button>
+            <button data-role="admin" onclick="switchRole('admin')">🛠️ Администратор</button>
+        </div>
+
+        <!-- ===== ШАПКА ===== -->
+        <div class="header">
+            <div class="header-left">
+                <h1 id="pageTitle">Моё расписание</h1>
+                <span class="role-badge" id="roleBadge">Преподаватель</span>
+            </div>
+            <div class="header-right">
+                <!-- Навигация -->
+                <div class="week-nav">
+                    <button onclick="changeWeek(-1)">‹</button>
+                    <span class="week-range" id="weekRange">22 – 28 июня 2026</span>
+                    <button onclick="changeWeek(1)">›</button>
+                    <button class="today-btn" onclick="goToday()">Сегодня</button>
+                </div>
+
+                <!-- Выбор преподавателя -->
+                <div class="teacher-selector">
+                    <select id="teacherSelect" onchange="onTeacherChange()">
+                        <option value="ivanov">Иван Петров</option>
+                        <option value="sidorov">Сидор Сидоров</option>
+                        <option value="petrova">Анна Петрова</option>
+                    </select>
+                    <div class="teacher-badge" id="teacherBadge">
+                        📚 <span id="subjectCount">5</span>
+                        <span class="edit-icon" id="editSubjectsBtn" onclick="openSubjectsModal()" title="Редактировать предметы">✎</span>
+                    </div>
+                </div>
+
+                <!-- Кнопка подработки -->
+                <button class="btn-substitution" onclick="openSubstitutionModal()">
+                    📋 Найти подработку
+                </button>
+            </div>
+        </div>
+
+        <!-- ===== КАЛЕНДАРЬ ===== -->
+        <div class="calendar-wrapper">
+            <div class="calendar-grid" id="calendarGrid">
+                <!-- Заполняется JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== МОДАЛКА: СОЗДАНИЕ СЛОТА ===== -->
+    <div class="modal-overlay" id="slotModal">
+        <div class="modal">
+            <h2>➕ Добавить время</h2>
+            <p class="subtitle">Слот обозначает вашу доступность. Предмет будет назначен позже.</p>
+
+            <div class="field">
+                <label>Дата</label>
+                <input type="date" id="slotDate" value="2026-06-25" />
+            </div>
+
+            <div class="field" style="display:flex; gap:12px;">
+                <div style="flex:1;">
+                    <label>Начало</label>
+                    <input type="time" id="slotStart" value="10:00" />
+                </div>
+                <div style="flex:1;">
+                    <label>Окончание</label>
+                    <input type="time" id="slotEnd" value="11:30" />
+                </div>
+            </div>
+
+            <div class="field">
+                <label>Тип слота</label>
+                <div class="toggle-group">
+                    <button class="active" data-type="permanent" onclick="setSlotType('permanent')">🟢 Постоянный</button>
+                    <button data-type="temporary" onclick="setSlotType('temporary')">🔵 Временный</button>
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="hint">💡 Постоянные слоты повторяются каждую неделю. Временные — только на выбранную дату.</div>
+            </div>
+
+            <div class="actions">
+                <button class="btn-secondary" onclick="closeModal('slotModal')">Отмена</button>
+                <button class="btn-primary" onclick="saveSlot()">Создать слот</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== МОДАЛКА: ПОДРАБОТКИ (ЗАМЕНЫ) ===== -->
+    <div class="modal-overlay" id="substitutionModal">
+        <div class="modal" style="max-width:600px;">
+            <h2>📋 Доступные замены</h2>
+            <p class="subtitle">Выберите подработку, которая вам подходит</p>
+            <div class="substitution-list" id="substitutionList">
+                <!-- Заполняется JS -->
+            </div>
+            <div class="actions" style="margin-top:16px;">
+                <button class="btn-secondary" onclick="closeModal('substitutionModal')">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== МОДАЛКА: ПРЕДМЕТЫ (админ) ===== -->
+    <div class="modal-overlay" id="subjectsModal">
+        <div class="modal subject-list-modal">
+            <h2>📚 Предметы преподавателя</h2>
+            <p class="subtitle" id="subjectsTeacherName">Иван Петров</p>
+            <div id="subjectsList" style="margin: 16px 0 24px 0;">
+                <!-- Заполняется JS -->
+            </div>
+            <div class="actions">
+                <button class="btn-secondary" onclick="closeModal('subjectsModal')">Закрыть</button>
+                <button class="btn-primary" id="adminSaveSubjectsBtn" style="display:none;" onclick="saveSubjects()">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // ============================================================
+        //  ДАННЫЕ
+        // ============================================================
+
+        // Справочник всех предметов
+        const ALL_SUBJECTS = [
+            'ScratchJR', 'Scratch', 'Minecraft', 'Tinkercad', 'Kodu Game Lab',
+            'Stencyl', 'App Inventor', 'Gogot', 'Roblox', 'Java Script',
+            'Blender', 'Unity Basic', 'Unity Advanced', 'HTML/CSS/JavaScript',
+            'Python', 'Unreal Engine', 'Java-Android'
+        ];
+
+        // Преподаватели и их предметы
+        const teachers = {
+            ivanov: {
+                name: 'Иван Петров',
+                subjects: ['Scratch', 'Python', 'Minecraft', 'Unity Basic']
+            },
+            sidorov: {
+                name: 'Сидор Сидоров',
+                subjects: ['Java Script', 'HTML/CSS/JavaScript', 'Blender']
+            },
+            petrova: {
+                name: 'Анна Петрова',
+                subjects: ['ScratchJR', 'Scratch', 'Tinkercad', 'App Inventor', 'Roblox']
+            }
+        };
+
+        // События (слоты) – пример
+        let events = [{
+            id: 1,
+            teacherId: 'ivanov',
+            day: 1, // 0=пн
+            start: 10,
+            end: 11.5,
+            type: 'system',
+            title: 'Gr. High Expert Online #21',
+            subject: 'Python',
+            group: 'Online #21'
+        }, {
+            id: 2,
+            teacherId: 'ivanov',
+            day: 1,
+            start: 13,
+            end: 15,
+            type: 'permanent',
+            title: 'Постоянный слот',
+            subject: null,
+            group: null
+        }, {
+            id: 3,
+            teacherId: 'ivanov',
+            day: 3,
+            start: 11,
+            end: 13,
+            type: 'temporary',
+            title: 'Временный слот',
+            subject: null,
+            group: null
+        }, {
+            id: 4,
+            teacherId: 'ivanov',
+            day: 5,
+            start: 10,
+            end: 12,
+            type: 'substitution',
+            title: 'ЗАМЕНА: Основы Python',
+            subject: 'Python',
+            group: 'Gr. Beginner #5'
+        }, {
+            id: 5,
+            teacherId: 'sidorov',
+            day: 2,
+            start: 12,
+            end: 14,
+            type: 'system',
+            title: 'Gr. Web Dev #12',
+            subject: 'HTML/CSS/JavaScript',
+            group: 'Web Dev #12'
+        }, {
+            id: 6,
+            teacherId: 'petrova',
+            day: 4,
+            start: 15,
+            end: 17,
+            type: 'permanent',
+            title: 'Постоянный слот',
+            subject: null,
+            group: null
+        }];
+
+        // Замены (подработки) – для модалки
+        let substitutions = [{
+            id: 101,
+            day: 2,
+            date: '25 июн',
+            start: 14,
+            end: 16,
+            subject: 'Python',
+            group: 'Gr. Pro #3',
+            teacherName: 'Ольга Смирнова',
+            taken: false
+        }, {
+            id: 102,
+            day: 4,
+            date: '27 июн',
+            start: 10,
+            end: 12,
+            subject: 'Minecraft',
+            group: 'Gr. Kids #7',
+            teacherName: 'Дмитрий Козлов',
+            taken: false
+        }, {
+            id: 103,
+            day: 5,
+            date: '28 июн',
+            start: 16,
+            end: 18,
+            subject: 'Unity Basic',
+            group: 'Gr. GameDev #2',
+            teacherName: 'Екатерина Новикова',
+            taken: false
+        }];
+
+        // ============================================================
+        //  СОСТОЯНИЕ
+        // ============================================================
+
+        let currentRole = 'teacher'; // 'teacher' | 'admin'
+        let currentTeacher = 'ivanov';
+        let currentWeekStart = new Date(2026, 5, 22); // 22 июня 2026
+        let slotType = 'permanent';
+        let tempEventId = 100;
+
+        // ============================================================
+        //  РЕНДЕРИНГ КАЛЕНДАРЯ
+        // ============================================================
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            const start = new Date(currentWeekStart);
+            const days = [];
+
+            // Заголовки
+            let html = '';
+            // Пустая ячейка для временной шкалы
+            html += `<div class="time-label" style="background:#fafbfc; border-bottom:1px solid #e5e7eb; font-weight:600; color:#1a1a2e;">Время</div>`;
+
+            const today = new Date();
+            const todayDate = today.getDate();
+            const todayMonth = today.getMonth();
+            const todayYear = today.getFullYear();
+
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(start);
+                d.setDate(start.getDate() + i);
+                const dayNum = d.getDate();
+                const monthShort = d.toLocaleString('ru', { month: 'short' });
+                const isToday = (dayNum === todayDate && d.getMonth() === todayMonth && d.getFullYear() === todayYear);
+                const dayName = d.toLocaleString('ru', { weekday: 'short' });
+                html += `<div class="day-header ${isToday ? 'today' : ''}">
+                            <span class="day-name">${dayName}</span>
+                            <span class="day-number">${dayNum}</span>
+                            <span style="font-size:11px;color:#9ca3af;">${monthShort}</span>
+                        </div>`;
+                days.push(d);
+            }
+
+            // Временные слоты
+            const hours = [];
+            for (let h = 7; h <= 22; h++) {
+                hours.push(h);
+            }
+
+            for (let h of hours) {
+                // Метка времени
+                html += `<div class="time-label">${h.toString().padStart(2, '0')}:00</div>`;
+
+                for (let dIdx = 0; dIdx < 7; dIdx++) {
+                    const dayDate = days[dIdx];
+                    const isToday = (dayDate.getDate() === todayDate &&
+                        dayDate.getMonth() === todayMonth &&
+                        dayDate.getFullYear() === todayYear);
+
+                    html += `<div class="cell ${isToday ? 'today-col' : ''}" 
+                                data-day="${dIdx}" 
+                                data-hour="${h}" 
+                                onclick="onCellClick(${dIdx}, ${h})">`;
+
+                    // Найти события в этой ячейке
+                    const cellEvents = events.filter(e =>
+                        e.teacherId === currentTeacher &&
+                        e.day === dIdx &&
+                        e.start <= h + 0.5 &&
+                        e.end > h
+                    );
+
+                    // Отображаем карточки (только для начала часа)
+                    for (let ev of cellEvents) {
+                        if (ev.start === h || (ev.start < h && ev.start > h - 0.5)) {
+                            const topOffset = (ev.start - h) * 60;
+                            const height = (ev.end - ev.start) * 60;
+                            let cls = 'event-card ';
+                            let typeLabel = '';
+                            switch (ev.type) {
+                                case 'system':
+                                    cls += 'card-system';
+                                    break;
+                                case 'permanent':
+                                    cls += 'card-permanent';
+                                    typeLabel = 'Пост.';
+                                    break;
+                                case 'temporary':
+                                    cls += 'card-temporary';
+                                    typeLabel = 'Врем.';
+                                    break;
+                                case 'substitution':
+                                    cls += 'card-substitution';
+                                    typeLabel = 'ЗАМЕНА';
+                                    break;
+                                default:
+                                    cls += 'card-system';
+                            }
+
+                            const timeStr = `${Math.floor(ev.start)}:${(ev.start % 1) * 60 === 0 ? '00' : '30'} – ${Math.floor(ev.end)}:${(ev.end % 1) * 60 === 0 ? '00' : '30'}`;
+                            html += `<div class="${cls}" style="top:${topOffset}px; height:${height}px; min-height:24px;" onclick="event.stopPropagation(); onEventClick('${ev.id}')">
+                                        <span class="time">${timeStr}</span>
+                                        <span class="title">${ev.title}</span>
+                                        ${ev.subject ? `<span class="sub">${ev.subject} ${ev.group ? '· ' + ev.group : ''}</span>` : ''}
+                                        ${typeLabel ? `<span class="badge">${typeLabel}</span>` : ''}
+                                    </div>`;
+                        }
+                    }
+
+                    html += `</div>`;
+                }
+            }
+
+            grid.innerHTML = html;
+            updateWeekRange();
+            updateTeacherBadge();
+        }
+
+        // ============================================================
+        //  ОБНОВЛЕНИЕ ЭЛЕМЕНТОВ
+        // ============================================================
+
+        function updateWeekRange() {
+            const start = new Date(currentWeekStart);
+            const end = new Date(start);
+            end.setDate(start.getDate() + 6);
+            const opts = { day: 'numeric', month: 'long', year: 'numeric' };
+            document.getElementById('weekRange').textContent =
+                `${start.toLocaleDateString('ru', opts)} – ${end.toLocaleDateString('ru', opts)}`;
+        }
+
+        function updateTeacherBadge() {
+            const t = teachers[currentTeacher];
+            if (t) {
+                document.getElementById('subjectCount').textContent = t.subjects.length;
+            }
+        }
+
+        function onTeacherChange() {
+            currentTeacher = document.getElementById('teacherSelect').value;
+            renderCalendar();
+        }
+
+        function changeWeek(dir) {
+            const newStart = new Date(currentWeekStart);
+            newStart.setDate(newStart.getDate() + dir * 7);
+            currentWeekStart = newStart;
+            renderCalendar();
+        }
+
+        function goToday() {
+            const today = new Date();
+            const day = today.getDay();
+            const diff = (day === 0 ? 6 : day - 1);
+            const monday = new Date(today);
+            monday.setDate(today.getDate() - diff);
+            currentWeekStart = monday;
+            renderCalendar();
+        }
+
+        // ============================================================
+        //  РОЛИ
+        // ============================================================
+
+        function switchRole(role) {
+            currentRole = role;
+            document.querySelectorAll('.role-switcher button').forEach(b => b.classList.remove('active'));
+            document.querySelector(`.role-switcher button[data-role="${role}"]`).classList.add('active');
+
+            const title = document.getElementById('pageTitle');
+            const badge = document.getElementById('roleBadge');
+            const editBtn = document.getElementById('editSubjectsBtn');
+
+            if (role === 'teacher') {
+                title.textContent = 'Моё расписание';
+                badge.textContent = 'Преподаватель';
+                editBtn.style.display = 'none';
+                document.querySelector('.btn-substitution').style.display = 'flex';
+            } else {
+                title.textContent = 'Расписание преподавателей';
+                badge.textContent = 'Администратор';
+                editBtn.style.display = 'inline';
+                document.querySelector('.btn-substitution').style.display = 'flex';
+            }
+            renderCalendar();
+        }
+
+        // ============================================================
+        //  КЛИКИ И МОДАЛКИ
+        // ============================================================
+
+        function onCellClick(day, hour) {
+            if (currentRole === 'admin') {
+                // Админ может редактировать любое расписание
+                openSlotModal(day, hour);
+            } else {
+                // Преподаватель может создать слот только если это его расписание
+                openSlotModal(day, hour);
+            }
+        }
+
+        function onEventClick(eventId) {
+            alert(`Событие #${eventId}\n\n(Здесь будет редактирование слота)`);
+        }
+
+        function openSlotModal(day, hour) {
+            // Предзаполняем дату
+            const base = new Date(currentWeekStart);
+            base.setDate(base.getDate() + day);
+            const dateStr = base.toISOString().split('T')[0];
+            document.getElementById('slotDate').value = dateStr;
+            document.getElementById('slotStart').value = `${hour.toString().padStart(2, '0')}:00`;
+            document.getElementById('slotEnd').value = `${(hour+1.5).toString().padStart(2, '0')}:00`;
+
+            // Сброс типа
+            setSlotType('permanent');
+            document.getElementById('slotModal').classList.add('active');
+        }
+
+        function setSlotType(type) {
+            slotType = type;
+            document.querySelectorAll('#slotModal .toggle-group button').forEach(b => b.classList.remove('active'));
+            document.querySelector(`#slotModal .toggle-group button[data-type="${type}"]`).classList.add('active');
+        }
+
+        function saveSlot() {
+            const date = document.getElementById('slotDate').value;
+            const start = document.getElementById('slotStart').value;
+            const end = document.getElementById('slotEnd').value;
+            const day = new Date(date).getDay();
+            const dayIdx = (day === 0 ? 6 : day - 1);
+
+            const startHour = parseFloat(start.replace(':', '.'));
+            const endHour = parseFloat(end.replace(':', '.'));
+
+            if (startHour >= endHour) {
+                alert('Время начала должно быть раньше окончания');
+                return;
+            }
+
+            const newEvent = {
+                id: ++tempEventId,
+                teacherId: currentTeacher,
+                day: dayIdx,
+                start: startHour,
+                end: endHour,
+                type: slotType,
+                title: slotType === 'permanent' ? 'Постоянный слот' : 'Временный слот',
+                subject: null,
+                group: null
+            };
+
+            events.push(newEvent);
+            closeModal('slotModal');
+            renderCalendar();
+            alert('✅ Слот создан!');
+        }
+
+        // ============================================================
+        //  ПОДРАБОТКИ (ЗАМЕНЫ)
+        // ============================================================
+
+        function openSubstitutionModal() {
+            const list = document.getElementById('substitutionList');
+            const teacherSubjects = teachers[currentTeacher]?.subjects || [];
+
+            // Фильтруем по предметам преподавателя
+            const available = substitutions.filter(s => !s.taken && teacherSubjects.includes(s.subject));
+
+            if (available.length === 0) {
+                list.innerHTML = `<div class="empty-state">😕 Нет доступных замен по вашим предметам</div>`;
+            } else {
+                let html = '';
+                for (let s of available) {
+                    const startStr = `${Math.floor(s.start)}:${(s.start % 1) * 60 === 0 ? '00' : '30'}`;
+                    const endStr = `${Math.floor(s.end)}:${(s.end % 1) * 60 === 0 ? '00' : '30'}`;
+                    html += `
+                                <div class="substitution-item">
+                                    <div class="info">
+                                        <div class="date">${s.date} · ${startStr} – ${endStr}</div>
+                                        <div class="details">${s.group} · Преподаватель: ${s.teacherName}</div>
+                                        <span class="subject-tag">${s.subject}</span>
+                                    </div>
+                                    <button class="btn-take" onclick="takeSubstitution(${s.id})">Взять замену</button>
+                                </div>
+                            `;
+                }
+                list.innerHTML = html;
+            }
+
+            document.getElementById('substitutionModal').classList.add('active');
+        }
+
+        function takeSubstitution(id) {
+            const sub = substitutions.find(s => s.id === id);
+            if (!sub || sub.taken) return;
+
+            if (confirm(`Вы действительно хотите взять замену на ${sub.date} ${sub.start}:00 по предмету ${sub.subject}?`)) {
+                sub.taken = true;
+
+                // Добавляем событие в расписание
+                const newEvent = {
+                    id: ++tempEventId,
+                    teacherId: currentTeacher,
+                    day: sub.day,
+                    start: sub.start,
+                    end: sub.end,
+                    type: 'substitution',
+                    title: `ЗАМЕНА: ${sub.subject}`,
+                    subject: sub.subject,
+                    group: sub.group
+                };
+                events.push(newEvent);
+
+                // Уведомление кураторам (имитация)
+                alert(`🔔 Уведомление кураторам:\nПреподаватель ${teachers[currentTeacher].name} назначен на замену ${sub.teacherName} (${sub.date}, ${sub.subject})`);
+
+                renderCalendar();
+                openSubstitutionModal(); // обновить список
+            }
+        }
+
+        // ============================================================
+        //  ПРЕДМЕТЫ (админ)
+        // ============================================================
+
+        function openSubjectsModal() {
+            const t = teachers[currentTeacher];
+            if (!t) return;
+
+            document.getElementById('subjectsTeacherName').textContent = t.name;
+
+            const container = document.getElementById('subjectsList');
+            let html = '';
+            const isAdmin = currentRole === 'admin';
+
+            for (let sub of ALL_SUBJECTS) {
+                const has = t.subjects.includes(sub);
+                html += `<span class="subject-tag ${isAdmin ? 'admin' : ''}" 
+                                style="${has ? 'background:#dbeafe; color:#1e40af;' : 'background:#f3f4f6; color:#6b7280;'}"
+                                onclick="${isAdmin ? `toggleSubject('${sub}')` : ''}"
+                                >${sub} ${has ? '✓' : ''}</span>`;
+            }
+
+            container.innerHTML = html;
+
+            // Показываем кнопку сохранения только админу
+            document.getElementById('adminSaveSubjectsBtn').style.display = isAdmin ? 'inline-flex' : 'none';
+
+            document.getElementById('subjectsModal').classList.add('active');
+        }
+
+        function toggleSubject(subject) {
+            if (currentRole !== 'admin') return;
+            const t = teachers[currentTeacher];
+            const idx = t.subjects.indexOf(subject);
+            if (idx >= 0) {
+                t.subjects.splice(idx, 1);
+            } else {
+                t.subjects.push(subject);
+            }
+            openSubjectsModal(); // перерисовать
+        }
+
+        function saveSubjects() {
+            alert('✅ Предметы сохранены для ' + teachers[currentTeacher].name);
+            closeModal('subjectsModal');
+            renderCalendar();
+        }
+
+        // ============================================================
+        //  УТИЛИТЫ
+        // ============================================================
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        // Закрытие по клику на оверлей
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                }
+            });
+        });
+
+        // ============================================================
+        //  ИНИЦИАЛИЗАЦИЯ
+        // ============================================================
+
+        renderCalendar();
+        switchRole('teacher');
+    </script>
+
+</body>
+</html>
